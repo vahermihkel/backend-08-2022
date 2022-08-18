@@ -1,5 +1,6 @@
-package ee.mihkel.webshop;
+package ee.mihkel.webshop.repository;
 
+import ee.mihkel.webshop.entity.Product;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ProductRepository extends JpaRepository<Product, Long> {

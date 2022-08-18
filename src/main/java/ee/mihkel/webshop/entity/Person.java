@@ -1,4 +1,4 @@
-package ee.mihkel.webshop;
+package ee.mihkel.webshop.entity;
 
 // kui oleks pannud User klassi nimeks
 // ja Entity() oleks postgres olnud error

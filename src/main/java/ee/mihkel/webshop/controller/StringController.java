@@ -1,4 +1,4 @@
-package ee.mihkel.webshop;
+package ee.mihkel.webshop.controller;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
