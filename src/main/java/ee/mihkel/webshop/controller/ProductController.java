@@ -1,5 +1,6 @@
 package ee.mihkel.webshop.controller;
 
+import ee.mihkel.webshop.cache.ProductCache;
 import ee.mihkel.webshop.entity.Product;
 import ee.mihkel.webshop.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 @RestController
 public class ProductController {
@@ -14,6 +16,9 @@ public class ProductController {
 
     @Autowired
     ProductRepository productRepository;
+
+    @Autowired
+    ProductCache productCache;
 
     @GetMapping("products")
     public List<Product> getProducts() {
@@ -56,16 +61,17 @@ public class ProductController {
 //        products.set(index, product);
         if (productRepository.existsById(product.getId())) {
             productRepository.save(product);
+            productCache.emptyCache();
         }
         return productRepository.findAll();
     }
 
 
     @GetMapping("get-product/{id}") // localhost:8080/get-product/1
-    public Product getProduct(@PathVariable Long id) {
+    public Product getProduct(@PathVariable Long id) throws ExecutionException {
         // KAS null VÕI {id: 1 ,name:"Toode"}
         // KAS {id: 1 ,name:"Toode"} VÕI veateade
-        return productRepository.findById(id).get();
+        return productCache.getProduct(id);
     }
 
 //    @PatchMapping("edit-product/{index}")  // PUT     localhost:8080/edit-product/1
@@ -90,6 +96,7 @@ public class ProductController {
     public List<Product> deleteProduct(@PathVariable Long id) {
 //        products.remove(index);
         productRepository.deleteById(id);
+        productCache.emptyCache();
         return productRepository.findAll();
     }
 

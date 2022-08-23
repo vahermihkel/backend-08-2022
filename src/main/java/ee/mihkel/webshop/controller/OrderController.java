@@ -5,11 +5,16 @@ import ee.mihkel.webshop.entity.Person;
 import ee.mihkel.webshop.entity.Product;
 import ee.mihkel.webshop.repository.OrderRepository;
 import ee.mihkel.webshop.repository.PersonRepository;
+import ee.mihkel.webshop.repository.ProductRepository;
+import ee.mihkel.webshop.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 
 @RestController
@@ -21,6 +26,9 @@ public class OrderController {
     @Autowired
     PersonRepository personRepository;
 
+    @Autowired
+    OrderService orderService;
+
     @GetMapping("orders/{personCode}")
     public List<Order> getPersonOrders(@PathVariable String personCode) {
         Person person = personRepository.findById(personCode).get();
@@ -29,28 +37,14 @@ public class OrderController {
 
     @PostMapping("orders/{personCode}")
     public List<Order> addNewOrder(@PathVariable String personCode, @RequestBody List<Product> products) {
-        Person person = personRepository.findById(personCode).get();
-        Order order = new Order();
-        order.setCreationDate(new Date());
-        order.setPerson(person);
-        order.setProducts(products);
-//        double totalSum = 0;
-//        for (Product product: products) {
-////            totalSum = totalSum + product.getPrice();
-//            if (product.isActive()) {
-//                totalSum += product.getPrice();
-//            }
-//        }
-                            // map on asendus -> asenda iga Product Double väärtusega
-                            // element (e) product (p)
-                            // Product seest võetud hinnaga
-        double totalSum = products.stream()
-//                .filter(Product::isActive)
-                .mapToDouble(Product::getPrice)
-                .sum();
 
-        order.setTotalSum(totalSum);
-        orderRepository.save(order);
+        List<Product> originalProducts = orderService.findOriginalProducts(products);
+
+        double totalSum = orderService.calculateTotalSum(originalProducts);
+
+        Person person = personRepository.findById(personCode).get();
+        orderService.saveOrder(person,originalProducts,totalSum);
+
         return orderRepository.findAllByPerson(person);
     }
 }
