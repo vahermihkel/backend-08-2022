@@ -10,6 +10,7 @@ import ee.mihkel.webshop.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.websocket.server.PathParam;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -46,6 +47,14 @@ public class OrderController {
         Order order = orderService.saveOrder(person,originalProducts,totalSum);
 
         return orderService.getLinkFromEveryPay(order);
+    }
+
+    @GetMapping("payment-completed")
+    public String checkIfPaid(
+            @PathParam("order_reference") String orderId,
+            @PathParam("payment_reference") String paymentReference
+            ) {
+        return "Makse õnnestus: " + orderId + paymentReference;
     }
 }
 

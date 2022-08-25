@@ -37,7 +37,7 @@ public class OrderService {
 
     private String apiUsername = "92ddcfab96e34a5f";
     private String accountName = "EUR3D1";
-    private String customerUrl = "https://delfi.ee/cart";
+    private String customerUrl = "https://mihkel-webshop.herokuapp.com/payment-completed";
 
     public List<Product> findOriginalProducts(List<Product> products) {
         return products.stream()
