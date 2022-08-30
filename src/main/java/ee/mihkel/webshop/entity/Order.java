@@ -12,7 +12,7 @@ import java.util.List;
 
 @Data
 @Entity
-@SequenceGenerator(name="seq", initialValue=100000, allocationSize=1)
+@SequenceGenerator(name="seq", initialValue=230000, allocationSize=1)
 @Table(name = "orders") // vahetame tabeli nime PostgreSQL-s
 public class Order { // by default lähevad klassi nimed tabelite nimeks
     @Id
