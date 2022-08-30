@@ -3,12 +3,14 @@ package ee.mihkel.webshop.service;
 import ee.mihkel.webshop.cache.ProductCache;
 import ee.mihkel.webshop.controller.model.EveryPayData;
 import ee.mihkel.webshop.controller.model.EveryPayResponse;
+import ee.mihkel.webshop.controller.model.EveryPayState;
 import ee.mihkel.webshop.entity.Order;
 import ee.mihkel.webshop.entity.Person;
 import ee.mihkel.webshop.entity.Product;
 import ee.mihkel.webshop.repository.OrderRepository;
 import ee.mihkel.webshop.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -35,9 +37,24 @@ public class OrderService {
     @Autowired
     ProductCache productCache;
 
-    private String apiUsername = "92ddcfab96e34a5f";
-    private String accountName = "EUR3D1";
-    private String customerUrl = "https://mihkel-webshop.herokuapp.com/payment-completed";
+    @Autowired
+    RestTemplate restTemplate;
+
+    // import org.springframework.beans.factory.annotation.Value;
+    @Value("${everypay.username}")
+    private String apiUsername;
+
+    @Value("${everypay.account}")
+    private String accountName;
+
+    @Value("${everypay.customerurl}")
+    private String customerUrl;
+
+    @Value("${everypay.headers}")
+    private String everyPayHeaders;
+
+    @Value("${everypay.url}")
+    private String everyPayUrl;
 
     public List<Product> findOriginalProducts(List<Product> products) {
         return products.stream()
@@ -91,13 +108,8 @@ public class OrderService {
     public String getLinkFromEveryPay(Order order) {
 
         // @Autowired
-        RestTemplate restTemplate = new RestTemplate();
 
-        String url = "https://igw-demo.every-pay.com/api/v4/payments/oneoff";
-
-        System.out.println(new Date());
-        System.out.println(ZonedDateTime.now());
-        System.out.println("EXPECTED: 2022-08-25T18:20:15+03:00");
+        String url = everyPayUrl + "/payments/oneoff";
 
         // HttpEntity <- kogub kokku päringuga seotud sisu body: vasakul ja headers: paremal
         EveryPayData data = new EveryPayData();
@@ -110,15 +122,52 @@ public class OrderService {
         data.setCustomer_url(customerUrl);
 
         HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Basic OTJkZGNmYWI5NmUzNGE1Zjo4Y2QxOWU5OWU5YzJjMjA4ZWU1NjNhYmY3ZDBlNGRhZA==");
+        headers.set("Authorization", everyPayHeaders);
 
                                     //  null  ->   data
         HttpEntity<EveryPayData> entity = new HttpEntity<>(data, headers);
-
         // https://json2csharp.com/code-converters/json-to-pojo
 
         ResponseEntity<EveryPayResponse> response = restTemplate.exchange(url, HttpMethod.POST, entity, EveryPayResponse.class);
 
         return response.getBody().payment_link;
     }
+
+    public String checkIfOrderIsPaid(String payment_reference) {
+        String url = everyPayUrl + "/payments/" + payment_reference + "?api_username=" + apiUsername;
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", everyPayHeaders);
+        HttpEntity<String> httpEntity = new HttpEntity<>(headers);
+        ResponseEntity<EveryPayState> response = restTemplate.exchange(url, HttpMethod.GET, httpEntity, EveryPayState.class);
+
+        if (response.getBody() != null) {
+            String order_reference = response.getBody().order_reference;
+            Order order = orderRepository.findById(Long.parseLong(order_reference)).get();
+            // ctrl + alt + m
+            return getPaymentState(response, order_reference, order);
+        } else {
+            return "Ühenduse viga!";
+        }
+    }
+
+    private String getPaymentState(ResponseEntity<EveryPayState> response, String order_reference, Order order) {
+        switch (response.getBody().payment_state) {
+            case "settled":
+                order.setPaidState("settled");
+                orderRepository.save(order);
+                return "Makse õnnestus: " + order_reference;
+            case "failed":
+                order.setPaidState("failed");
+                orderRepository.save(order);
+                return "Makse ebaõnnestus: " + order_reference;
+            case "cancelled":
+                order.setPaidState("cancelled");
+                orderRepository.save(order);
+                return "Makse katkestati: " + order_reference;
+            default:
+                return "Makse ei toiminud";
+        }
+    }
 }
+
+// @ControllerAdvice - hakkame Exceptioneid kinni püüdma / ära vahetama
