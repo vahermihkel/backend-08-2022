@@ -23,6 +23,8 @@ public class Order { // by default lähevad klassi nimed tabelite nimeks
 
     private double totalSum;
 
+    private String paidState;
+
     @ManyToMany
     private List<Product> products;
 

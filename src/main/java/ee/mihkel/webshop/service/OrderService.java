@@ -63,6 +63,7 @@ public class OrderService {
         Order order = new Order();
         order.setCreationDate(new Date());
         order.setPerson(person);
+        order.setPaidState("initial");
         // OTSI ID ALUSEL KÕIKIDELE TOODETELE ORIGINAAL
 //        List<Product> originalProducts = new ArrayList<>();
 //        for (Product product: products) {
@@ -112,7 +113,7 @@ public class OrderService {
         headers.set("Authorization", "Basic OTJkZGNmYWI5NmUzNGE1Zjo4Y2QxOWU5OWU5YzJjMjA4ZWU1NjNhYmY3ZDBlNGRhZA==");
 
                                     //  null  ->   data
-        HttpEntity entity = new HttpEntity(data, headers);
+        HttpEntity<EveryPayData> entity = new HttpEntity<>(data, headers);
 
         // https://json2csharp.com/code-converters/json-to-pojo
 
