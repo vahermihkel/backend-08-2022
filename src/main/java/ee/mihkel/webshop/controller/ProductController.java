@@ -4,6 +4,10 @@ import ee.mihkel.webshop.cache.ProductCache;
 import ee.mihkel.webshop.entity.Product;
 import ee.mihkel.webshop.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -101,6 +105,63 @@ public class ProductController {
         productCache.emptyCache();
         return new ResponseEntity<>(productRepository.findAll(), HttpStatus.OK);
     }
+
+    // GET - võtmiseks POST - lisamiseks DELETE - kustutamiseks
+    // PUT - tervikuna asendamiseks    PATCH - mingi ühe omaduse asendamine
+    @PatchMapping("add-stock")
+    public ResponseEntity<List<Product>> addStock(@RequestBody Product product) {
+        Product originalProduct = productRepository.findById(product.getId()).get();
+//        if (originalProduct.getStock() == null) {
+//
+//        }
+        originalProduct.setStock(originalProduct.getStock()+1);
+        productRepository.save(originalProduct);
+        return new ResponseEntity<>(productRepository.findAll(), HttpStatus.OK);
+    }
+
+    @PatchMapping("decrease-stock")
+    public ResponseEntity<List<Product>> decreaseStock(@RequestBody Product product) {
+        Product originalProduct = productRepository.findById(product.getId()).get();
+        if (originalProduct.getStock() > 0) {
+            originalProduct.setStock(originalProduct.getStock()-1);
+            productRepository.save(originalProduct);
+        }
+        return new ResponseEntity<>(productRepository.findAll(), HttpStatus.OK);
+    }
+
+    // lisame igale tootlee andmebaasi ka koguse
+    // API otspunkti kaudu saab kogusele +1 ja -1 panna
+    // -1 kaudu ei lase miinusesse
+
+    // võiks teha eraldi API otspunktid aktiivsete ja + kogustega toodete jaoks
+
+    @GetMapping("active-products")
+    public ResponseEntity<List<Product>> getAllActiveProducts() {
+        return new ResponseEntity<>(
+                productRepository.findAllByStockGreaterThanAndActiveEqualsOrderByIdAsc(0,true),
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("active-products/{pagenr}")
+    public ResponseEntity<List<Product>> getActiveProductsPerPage(@PathVariable int pagenr) {
+        Pageable pageRequest = PageRequest.of(pagenr, 3);
+        return new ResponseEntity<>(
+                productRepository.findAllByStockGreaterThanAndActiveEqualsOrderByIdAsc(0,true, pageRequest),
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("products-per-page/{pagenr}")
+    public Page<Product> getProducsPerPage(@PathVariable int pagenr) {
+        Pageable pageRequest = PageRequest.of(pagenr, 3);
+        return productRepository.findAll(pageRequest);
+    }
+
+
+    // Pagination -> võtmine lehekülje kaupa
+
+    // Productis kontrollid, et ei saa ilma nime ja hinnata sisestada
 
 //    @DeleteMapping("delete-product-id/{id}")  //localhost:8080/delete-product-id/1
 //    public List<Product> deleteProductById(@PathVariable Long id) {
