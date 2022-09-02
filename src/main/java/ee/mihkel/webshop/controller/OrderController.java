@@ -9,10 +9,7 @@ import ee.mihkel.webshop.repository.PersonRepository;
 import ee.mihkel.webshop.repository.ProductRepository;
 import ee.mihkel.webshop.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
@@ -37,13 +34,13 @@ public class OrderController {
     OrderService orderService;
 
     @GetMapping("orders/{personCode}")
-    public List<Order> getPersonOrders(@PathVariable String personCode) {
+    public ResponseEntity<List<Order>> getPersonOrders(@PathVariable String personCode) {
         Person person = personRepository.findById(personCode).get();
-        return orderRepository.findAllByPerson(person);
+        return new ResponseEntity<>(orderRepository.findAllByPerson(person), HttpStatus.OK);
     }
 
     @PostMapping("orders/{personCode}")
-    public String addNewOrder(@PathVariable String personCode, @RequestBody List<Product> products) {
+    public ResponseEntity<String> addNewOrder(@PathVariable String personCode, @RequestBody List<Product> products) {
 
         List<Product> originalProducts = orderService.findOriginalProducts(products);
 
@@ -52,15 +49,15 @@ public class OrderController {
         Person person = personRepository.findById(personCode).get();
         Order order = orderService.saveOrder(person,originalProducts,totalSum);
 
-        return orderService.getLinkFromEveryPay(order);
+        return new ResponseEntity<>(orderService.getLinkFromEveryPay(order), HttpStatus.CREATED) ;
     }
 
     @GetMapping("payment-completed")
-    public String checkIfPaid(
+    public ResponseEntity<String> checkIfPaid(
             @PathParam("payment_reference") String payment_reference
             ) {
 
-        return orderService.checkIfOrderIsPaid(payment_reference);
+        return new ResponseEntity<>(orderService.checkIfOrderIsPaid(payment_reference), HttpStatus.OK) ;
 
     }
 }

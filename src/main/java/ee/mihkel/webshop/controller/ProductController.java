@@ -4,6 +4,8 @@ import ee.mihkel.webshop.cache.ProductCache;
 import ee.mihkel.webshop.entity.Product;
 import ee.mihkel.webshop.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -21,8 +23,8 @@ public class ProductController {
     ProductCache productCache;
 
     @GetMapping("products")
-    public List<Product> getProducts() {
-        return productRepository.findAll();
+    public ResponseEntity<List<Product>> getProducts() {
+        return new ResponseEntity<>(productRepository.findAll(), HttpStatus.OK);
     }
 
     // localhost:8080/products?id=1&name=Toode&price=30&image=s&active=true
@@ -42,36 +44,36 @@ public class ProductController {
     // GET / POST / DELETE / PUT
     // info front-endile, mis seal sees on toimumas
     @PostMapping("add-product")
-    public List<Product> addProduct(@RequestBody Product product) {
+    public ResponseEntity<List<Product>> addProduct(@RequestBody Product product) {
 //        products.add(product);
         // sout
 //        System.out.println(!productRepository.findById(product.getId()).isPresent());
 //        if (!productRepository.existsById(product.getId())) {
             productRepository.save(product);
 //        }
-        return productRepository.findAll();
+        return new ResponseEntity<>(productRepository.findAll(), HttpStatus.CREATED);
     }
 
     @PutMapping("edit-product/{index}")  // PUT     localhost:8080/edit-product/1
     // [{id: 1,name:""},{id: 2,name:""}]
     //     tagastus Frondendile (tüüp)      mis andmeid nõuan koos päringuga
                                                 //{id: 1,name:""}
-    public List<Product> editProduct(@RequestBody Product product, @PathVariable int index) {
+    public ResponseEntity<List<Product>> editProduct(@RequestBody Product product, @PathVariable int index) {
 //        products.add(product);
 //        products.set(index, product);
         if (productRepository.existsById(product.getId())) {
             productRepository.save(product);
             productCache.emptyCache();
         }
-        return productRepository.findAll();
+        return new ResponseEntity<>(productRepository.findAll(), HttpStatus.OK);
     }
 
 
     @GetMapping("get-product/{id}") // localhost:8080/get-product/1
-    public Product getProduct(@PathVariable Long id) throws ExecutionException {
+    public ResponseEntity<Product> getProduct(@PathVariable Long id) throws ExecutionException {
         // KAS null VÕI {id: 1 ,name:"Toode"}
         // KAS {id: 1 ,name:"Toode"} VÕI veateade
-        return productCache.getProduct(id);
+        return new ResponseEntity<>(productCache.getProduct(id), HttpStatus.OK);
     }
 
 //    @PatchMapping("edit-product/{index}")  // PUT     localhost:8080/edit-product/1
@@ -93,11 +95,11 @@ public class ProductController {
 //    }
 
     @DeleteMapping("delete-product/{id}")  //localhost:8080/delete-product/1
-    public List<Product> deleteProduct(@PathVariable Long id) {
+    public ResponseEntity<List<Product>> deleteProduct(@PathVariable Long id) {
 //        products.remove(index);
         productRepository.deleteById(id);
         productCache.emptyCache();
-        return productRepository.findAll();
+        return new ResponseEntity<>(productRepository.findAll(), HttpStatus.OK);
     }
 
 //    @DeleteMapping("delete-product-id/{id}")  //localhost:8080/delete-product-id/1
