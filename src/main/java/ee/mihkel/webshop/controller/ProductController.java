@@ -1,7 +1,9 @@
 package ee.mihkel.webshop.controller;
 
 import ee.mihkel.webshop.cache.ProductCache;
+import ee.mihkel.webshop.entity.Category;
 import ee.mihkel.webshop.entity.Product;
+import ee.mihkel.webshop.repository.CategoryRepository;
 import ee.mihkel.webshop.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -13,8 +15,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 @RestController
 @CrossOrigin("http://localhost:3000")
@@ -25,11 +29,14 @@ public class ProductController {
     ProductRepository productRepository;
 
     @Autowired
+    CategoryRepository categoryRepository;
+
+    @Autowired
     ProductCache productCache;
 
     @GetMapping("products")
     public ResponseEntity<List<Product>> getProducts() {
-        return new ResponseEntity<>(productRepository.findAll(), HttpStatus.OK);
+        return new ResponseEntity<>(productRepository.findAllByOrderById(), HttpStatus.OK);
     }
 
     // localhost:8080/products?id=1&name=Toode&price=30&image=s&active=true
@@ -56,7 +63,7 @@ public class ProductController {
 //        if (!productRepository.existsById(product.getId())) {
             productRepository.save(product);
 //        }
-        return new ResponseEntity<>(productRepository.findAll(), HttpStatus.CREATED);
+        return new ResponseEntity<>(productRepository.findAllByOrderById(), HttpStatus.CREATED);
     }
 
     @PutMapping("edit-product/{index}")  // PUT     localhost:8080/edit-product/1
@@ -70,7 +77,7 @@ public class ProductController {
             productRepository.save(product);
             productCache.emptyCache();
         }
-        return new ResponseEntity<>(productRepository.findAll(), HttpStatus.OK);
+        return new ResponseEntity<>(productRepository.findAllByOrderById(), HttpStatus.OK);
     }
 
 
@@ -104,7 +111,7 @@ public class ProductController {
 //        products.remove(index);
         productRepository.deleteById(id);
         productCache.emptyCache();
-        return new ResponseEntity<>(productRepository.findAll(), HttpStatus.OK);
+        return new ResponseEntity<>(productRepository.findAllByOrderById(), HttpStatus.OK);
     }
 
     // GET - võtmiseks POST - lisamiseks DELETE - kustutamiseks
@@ -117,7 +124,7 @@ public class ProductController {
 //        }
         originalProduct.setStock(originalProduct.getStock()+1);
         productRepository.save(originalProduct);
-        return new ResponseEntity<>(productRepository.findAll(), HttpStatus.OK);
+        return new ResponseEntity<>(productRepository.findAllByOrderById(), HttpStatus.OK);
     }
 
     @PatchMapping("decrease-stock")
@@ -127,7 +134,7 @@ public class ProductController {
             originalProduct.setStock(originalProduct.getStock()-1);
             productRepository.save(originalProduct);
         }
-        return new ResponseEntity<>(productRepository.findAll(), HttpStatus.OK);
+        return new ResponseEntity<>(productRepository.findAllByOrderById(), HttpStatus.OK);
     }
 
     // lisame igale tootlee andmebaasi ka koguse
@@ -157,6 +164,15 @@ public class ProductController {
     public Page<Product> getProducsPerPage(@PathVariable int pagenr) {
         Pageable pageRequest = PageRequest.of(pagenr, 3);
         return productRepository.findAll(pageRequest);
+    }
+
+    @GetMapping("products-by-category/{categoryId}")
+    public List<Long> getProducsPerPage(@PathVariable Long categoryId) {
+        Category category = categoryRepository.findById(categoryId).get();
+        List<Long> ids = productRepository.findAllByCategoryOrderByIdAsc(category).stream()
+                .map(Product::getId)
+                .collect(Collectors.toList());
+        return ids;
     }
 
 

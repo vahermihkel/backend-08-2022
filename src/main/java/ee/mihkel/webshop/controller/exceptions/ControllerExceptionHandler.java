@@ -32,6 +32,12 @@ public class ControllerExceptionHandler {
         return new ResponseEntity<>(response,HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler()
+    public ResponseEntity<ExceptionResponse> handleError(CategoryInUseException e) {
+        ExceptionResponse response = getExceptionResponse(HttpStatus.BAD_REQUEST, "CATEGORY_IS_IN_USE");
+        return new ResponseEntity<>(response,HttpStatus.BAD_REQUEST);
+    }
+
     private ExceptionResponse getExceptionResponse(HttpStatus notFound, String s) {
         // ctrl + alt + m
         ExceptionResponse response = new ExceptionResponse();
