@@ -105,7 +105,7 @@ public class OrderService {
         return orderRepository.save(order);
     }
 
-    public String getLinkFromEveryPay(Order order) {
+    public EveryPayResponse getLinkFromEveryPay(Order order) {
 
         // @Autowired
 
@@ -129,7 +129,7 @@ public class OrderService {
         // https://json2csharp.com/code-converters/json-to-pojo
 
         ResponseEntity<EveryPayResponse> response = restTemplate.exchange(url, HttpMethod.POST, entity, EveryPayResponse.class);
-        return response.getBody().payment_link;
+        return response.getBody();
     }
 
     public String checkIfOrderIsPaid(String payment_reference) {

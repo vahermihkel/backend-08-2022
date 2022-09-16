@@ -1,27 +1,26 @@
 package ee.mihkel.webshop.controller;
 
 import ee.mihkel.webshop.cache.ProductCache;
+import ee.mihkel.webshop.controller.exceptions.ProductInUseException;
 import ee.mihkel.webshop.entity.Category;
 import ee.mihkel.webshop.entity.Product;
 import ee.mihkel.webshop.repository.CategoryRepository;
 import ee.mihkel.webshop.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 @RestController
-@CrossOrigin("http://localhost:3000")
 public class ProductController {
     List<Product> products = new ArrayList<>();
 
@@ -107,10 +106,15 @@ public class ProductController {
 //    }
 
     @DeleteMapping("delete-product/{id}")  //localhost:8080/delete-product/1
-    public ResponseEntity<List<Product>> deleteProduct(@PathVariable Long id) {
+    public ResponseEntity<List<Product>> deleteProduct(@PathVariable Long id) throws ProductInUseException {
 //        products.remove(index);
-        productRepository.deleteById(id);
-        productCache.emptyCache();
+        try {
+            productRepository.deleteById(id);
+            productCache.emptyCache();
+        } catch (DataIntegrityViolationException exception) {
+            throw new ProductInUseException();
+        }
+
         return new ResponseEntity<>(productRepository.findAllByOrderById(), HttpStatus.OK);
     }
 

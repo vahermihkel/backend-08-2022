@@ -1,6 +1,6 @@
 package ee.mihkel.webshop.controller;
 
-import ee.mihkel.webshop.controller.model.EveryPayState;
+import ee.mihkel.webshop.controller.model.EveryPayResponse;
 import ee.mihkel.webshop.entity.Order;
 import ee.mihkel.webshop.entity.Person;
 import ee.mihkel.webshop.entity.Product;
@@ -11,13 +11,9 @@ import ee.mihkel.webshop.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate;
 
 import javax.websocket.server.PathParam;
-import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 
@@ -31,6 +27,9 @@ public class OrderController {
     PersonRepository personRepository;
 
     @Autowired
+    ProductRepository productRepository;
+
+    @Autowired
     OrderService orderService;
 
     @GetMapping("orders/{personCode}")
@@ -40,7 +39,7 @@ public class OrderController {
     }
 
     @PostMapping("orders/{personCode}")
-    public ResponseEntity<String> addNewOrder(@PathVariable String personCode, @RequestBody List<Product> products) {
+    public ResponseEntity<EveryPayResponse> addNewOrder(@PathVariable String personCode, @RequestBody List<Product> products) {
 
         List<Product> originalProducts = orderService.findOriginalProducts(products);
 
@@ -58,7 +57,15 @@ public class OrderController {
             ) {
 
         return new ResponseEntity<>(orderService.checkIfOrderIsPaid(payment_reference), HttpStatus.OK) ;
+    }
 
+    @GetMapping("orders-by-product/{productID}")
+    public List<Long> getOrdersByProduct(@PathVariable Long productID) {
+        Product product = productRepository.findById(productID).get();
+        List<Long> ids = orderRepository.findAllByProductsOrderByIdAsc(product).stream()
+                .map(Order::getId)
+                .collect(Collectors.toList());
+        return ids;
     }
 }
 
@@ -76,3 +83,11 @@ public class OrderController {
 
 // https://mihkel-webshop.herokuapp.com/payment-completed?order_reference=312312&payment_reference=31312
 // Kas õnnestus?
+
+
+// 1. Ise välja mõeldud projekt
+// 2. Proovitöö järgi tehtud projekt
+// 3. Tööprojekt
+// 4. Udemy/Youtube järgi tehtud
+// ainukene nõue on Springi kasutamine
+//    ei ole nõueteks front-endi kasutamine, sisselogimine/registreerumine

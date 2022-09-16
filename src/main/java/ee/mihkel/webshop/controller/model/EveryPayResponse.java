@@ -19,7 +19,7 @@ public class EveryPayResponse{
     public String payment_link;
     public ArrayList<PaymentMethod> payment_methods;
     public String api_username;
-    public Warnings warnings;
+    public Object warnings;
     public Object stan;
     public Object fraud_score;
     public String payment_state;
@@ -35,9 +35,5 @@ class PaymentMethod{
     public String logo_url;
     public Object applepay_available;
     public Object applepay_merchant_display_name;
-}
-
-@Data
-class Warnings{
 }
 

@@ -1,6 +1,7 @@
 package ee.mihkel.webshop.controller.exceptions;
 
 import ee.mihkel.webshop.controller.model.ExceptionResponse;
+import ee.mihkel.webshop.entity.Product;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -35,6 +36,12 @@ public class ControllerExceptionHandler {
     @ExceptionHandler()
     public ResponseEntity<ExceptionResponse> handleError(CategoryInUseException e) {
         ExceptionResponse response = getExceptionResponse(HttpStatus.BAD_REQUEST, "CATEGORY_IS_IN_USE");
+        return new ResponseEntity<>(response,HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler()
+    public ResponseEntity<ExceptionResponse> handleError(ProductInUseException e) {
+        ExceptionResponse response = getExceptionResponse(HttpStatus.BAD_REQUEST, "PRODUCT_IS_IN_USE");
         return new ResponseEntity<>(response,HttpStatus.BAD_REQUEST);
     }
 
