@@ -8,6 +8,7 @@ import lombok.*;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.OneToOne;
 
 @Getter
 @Setter
@@ -23,6 +24,7 @@ public class Person {
     private String telephone;
     private String address;
     private String password;
+    private String role;
 }
 
 

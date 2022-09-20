@@ -2,8 +2,11 @@ package ee.mihkel.webshop.configuration;
 
 import ee.mihkel.webshop.auth.TokenParser;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.http.SessionCreationPolicy;
 
 @Configuration
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
@@ -21,7 +24,15 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/get-product/**").permitAll()
                 .antMatchers("/login").permitAll()
                 .antMatchers("/signup").permitAll()
-                .anyRequest().authenticated();
+                .antMatchers("/parcel-machines/**").permitAll()
+                .antMatchers(HttpMethod.GET, "/category").permitAll()
+                .antMatchers("/persons").hasAuthority("admin")
+                .antMatchers(HttpMethod.POST, "category").hasAuthority("admin")
+                .antMatchers(HttpMethod.DELETE, "category").hasAuthority("admin")
+                .antMatchers(HttpMethod.POST, "add-product").hasAuthority("admin")
+                .anyRequest().authenticated()
+                .and().sessionManagement()
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
 
     }
 }

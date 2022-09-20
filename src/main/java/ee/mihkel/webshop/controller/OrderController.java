@@ -10,6 +10,7 @@ import ee.mihkel.webshop.repository.ProductRepository;
 import ee.mihkel.webshop.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.websocket.server.PathParam;
@@ -32,14 +33,16 @@ public class OrderController {
     @Autowired
     OrderService orderService;
 
-    @GetMapping("orders/{personCode}")
-    public ResponseEntity<List<Order>> getPersonOrders(@PathVariable String personCode) {
+    @GetMapping("orders")
+    public ResponseEntity<List<Order>> getPersonOrders() {
+        String personCode = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
         Person person = personRepository.findById(personCode).get();
         return new ResponseEntity<>(orderRepository.findAllByPerson(person), HttpStatus.OK);
     }
 
-    @PostMapping("orders/{personCode}")
-    public ResponseEntity<EveryPayResponse> addNewOrder(@PathVariable String personCode, @RequestBody List<Product> products) {
+    @PostMapping("orders")
+    public ResponseEntity<EveryPayResponse> addNewOrder(@RequestBody List<Product> products) {
+        String personCode = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
 
         List<Product> originalProducts = orderService.findOriginalProducts(products);
 

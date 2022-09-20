@@ -1,6 +1,13 @@
 package ee.mihkel.webshop.auth;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
 import javax.servlet.Filter;
@@ -9,6 +16,10 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 public class TokenParser extends BasicAuthenticationFilter {
     public TokenParser(AuthenticationManager authenticationManager) {
@@ -37,8 +48,45 @@ public class TokenParser extends BasicAuthenticationFilter {
 
         System.out.println(request.getHeader("Authorization"));
 
-        // SIIN SAAN TOKENI KÄTTE JA HAKKAN LAHTI PAKKIMA
-        // JWT (Json Web Token)
+        // Bearer dasdaseqwe31231qead
+        String headerToken = request.getHeader("Authorization");
+        if (headerToken != null && headerToken.startsWith("Bearer ")) {
+            String token = headerToken.replace("Bearer ", "");
+
+            System.out.println("TOKEN: " + token);
+
+            Claims claims = Jwts.parser()
+                    .setSigningKey("absolutely-secret-key")
+                    .parseClaimsJws(token)
+                    .getBody();
+
+            String issuer = claims.getIssuer();
+
+            System.out.println("ISSUER: " + issuer);
+
+            String personCode = claims.getSubject();
+
+            System.out.println(personCode);
+
+//            System.out.println(claims.get("role"));
+
+            List<GrantedAuthority> authorities = null;
+            if (claims.getId() != null && claims.getId().equals("admin")) {
+                GrantedAuthority authority = new SimpleGrantedAuthority("admin");
+                authorities = new ArrayList<>(Collections.singletonList(authority));
+            }
+
+            Authentication authentication = new UsernamePasswordAuthenticationToken(
+                    personCode,null, authorities
+            );
+
+            // turva globaalne hoidja
+            //SecurityContextHolder.getContext().getAuthentication().getPrincipal() --> isikukood
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            // MalformedJwtException
+            // ExpiredJwtException
+        }
 
         super.doFilterInternal(request, response, chain);
     }
