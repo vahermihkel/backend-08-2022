@@ -6,6 +6,7 @@ import ee.mihkel.webshop.entity.Category;
 import ee.mihkel.webshop.entity.Product;
 import ee.mihkel.webshop.repository.CategoryRepository;
 import ee.mihkel.webshop.repository.ProductRepository;
+import ee.mihkel.webshop.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
@@ -177,6 +178,15 @@ public class ProductController {
                 .map(Product::getId)
                 .collect(Collectors.toList());
         return ids;
+    }
+
+    @Autowired
+    OrderService orderService;
+
+    // localhost:8080/cart-products/1,2
+    @GetMapping("cart-products/{ids}")
+    public List<Product> getOriginalProducts(@PathVariable List<Long> ids) {
+       return orderService.findOriginalProducts(ids);
     }
 
 

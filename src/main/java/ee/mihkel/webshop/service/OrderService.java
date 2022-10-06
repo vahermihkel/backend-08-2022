@@ -1,24 +1,28 @@
 package ee.mihkel.webshop.service;
 
 import ee.mihkel.webshop.cache.ProductCache;
+import ee.mihkel.webshop.controller.model.CartProduct;
 import ee.mihkel.webshop.controller.model.EveryPayData;
 import ee.mihkel.webshop.controller.model.EveryPayResponse;
 import ee.mihkel.webshop.controller.model.EveryPayState;
 import ee.mihkel.webshop.entity.Order;
 import ee.mihkel.webshop.entity.Person;
 import ee.mihkel.webshop.entity.Product;
+import ee.mihkel.webshop.repository.CartProductRepository;
 import ee.mihkel.webshop.repository.OrderRepository;
 import ee.mihkel.webshop.repository.ProductRepository;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
-import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
@@ -26,6 +30,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 @Service
+@Log4j2
 public class OrderService {
 
     @Autowired
@@ -39,6 +44,9 @@ public class OrderService {
 
     @Autowired
     RestTemplate restTemplate;
+
+    @Autowired
+    CartProductRepository cartProductRepository;
 
     // import org.springframework.beans.factory.annotation.Value;
     @Value("${everypay.username}")
@@ -56,11 +64,12 @@ public class OrderService {
     @Value("${everypay.url}")
     private String everyPayUrl;
 
-    public List<Product> findOriginalProducts(List<Product> products) {
+    public List<Product> findOriginalProducts(List<Long> products) {
+        log.info("Fetching original products");
         return products.stream()
                 .map(e -> {
                     try {
-                        return productCache.getProduct(e.getId());
+                        return productCache.getProduct(e);
                     } catch (ExecutionException executionException) {
                         throw new RuntimeException();
                     }
@@ -68,15 +77,23 @@ public class OrderService {
                 .collect(Collectors.toList());
     }
 
-    public double calculateTotalSum(List<Product> originalProducts) {
-        return originalProducts.stream()
+    public double calculateTotalSum(List<CartProduct> cartProducts) {
+        String personCode = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
+        log.info("Calculating total sum {}", personCode);
+        return cartProducts.stream()
 //                .filter(Product::isActive)
-                .mapToDouble(Product::getPrice) // OTSE PÄRINGUST ARVUTATAKSE KOGUSUMMA
+                .mapToDouble(e -> e.getProduct().getPrice() * e.getQuantity()) // OTSE PÄRINGUST ARVUTATAKSE KOGUSUMMA
                 .sum();
     }
 
+    @Transactional
+    public Order saveOrder(Person person, List<CartProduct> cartProducts, double totalSum) {
 
-    public Order saveOrder(Person person, List<Product> originalProducts, double totalSum) {
+        String personCode = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
+        log.info("Starting to save Order {}", personCode);
+
+        cartProductRepository.saveAll(cartProducts);
+
         Order order = new Order();
         order.setCreationDate(new Date());
         order.setPerson(person);
@@ -90,7 +107,7 @@ public class OrderService {
 ////            originalProducts.add(productRepository.findById(product.getId()).get());
 //            // Robert C. Martin (Uncle Bob) - Clean Code
 //        }
-        order.setProducts(originalProducts); // OTSE PÄRINGUST PANNAKSE ANDMEBAASI
+        order.setLineItem(cartProducts); // OTSE PÄRINGUST PANNAKSE ANDMEBAASI
 //        double totalSum = 0;
 //        for (Product product: products) {
 ////            totalSum = totalSum + product.getPrice();

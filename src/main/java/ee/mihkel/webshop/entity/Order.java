@@ -1,5 +1,6 @@
 package ee.mihkel.webshop.entity;
 
+import ee.mihkel.webshop.controller.model.CartProduct;
 import lombok.Data;
 
 import javax.persistence.*;
@@ -25,8 +26,8 @@ public class Order { // by default lähevad klassi nimed tabelite nimeks
 
     private String paidState;
 
-    @ManyToMany
-    private List<Product> products;
+    @OneToMany
+    private List<CartProduct> lineItem;
 
     @ManyToOne
     private Person person;

@@ -1,7 +1,7 @@
 package ee.mihkel.webshop.auth;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.*;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -17,10 +17,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+@Log4j2
 public class TokenParser extends BasicAuthenticationFilter {
     public TokenParser(AuthenticationManager authenticationManager) {
         super(authenticationManager);
@@ -40,52 +40,48 @@ public class TokenParser extends BasicAuthenticationFilter {
         // VÕTA GLOBAALNE SISSELOGITU --> saan ta kätte ja seejärel saan ta tellimused kätte
         // Kui päring lõppeb (tagastatakse front-endile), siis see inimene pole enam globaalselt sees
 
-        System.out.println("KONTROLLIN TOKENIT");
 
-        System.out.println(request.getMethod());
-
-        System.out.println(request.getRequestURI());
-
-        System.out.println(request.getHeader("Authorization"));
 
         // Bearer dasdaseqwe31231qead
         String headerToken = request.getHeader("Authorization");
         if (headerToken != null && headerToken.startsWith("Bearer ")) {
             String token = headerToken.replace("Bearer ", "");
 
-            System.out.println("TOKEN: " + token);
+            try {
+                Claims claims = Jwts.parser()
+                        .setSigningKey("absolutely-secret-key")
+                        .parseClaimsJws(token)
+                        .getBody();
 
-            Claims claims = Jwts.parser()
-                    .setSigningKey("absolutely-secret-key")
-                    .parseClaimsJws(token)
-                    .getBody();
+                String personCode = claims.getSubject();
 
-            String issuer = claims.getIssuer();
+                log.info("Successfully logged in {}", personCode);
+                log.info("Checking if {}", claims.getAudience());
 
-            System.out.println("ISSUER: " + issuer);
+                List<GrantedAuthority> authorities = null;
+                if (claims.getId() != null && claims.getId().equals("admin")) {
+                    GrantedAuthority authority = new SimpleGrantedAuthority("admin");
+                    authorities = new ArrayList<>(Collections.singletonList(authority));
+                }
 
-            String personCode = claims.getSubject();
+                Authentication authentication = new UsernamePasswordAuthenticationToken(
+                        personCode,null, authorities
+                );
 
-            System.out.println(personCode);
-
-//            System.out.println(claims.get("role"));
-
-            List<GrantedAuthority> authorities = null;
-            if (claims.getId() != null && claims.getId().equals("admin")) {
-                GrantedAuthority authority = new SimpleGrantedAuthority("admin");
-                authorities = new ArrayList<>(Collections.singletonList(authority));
+                // turva globaalne hoidja
+                //SecurityContextHolder.getContext().getAuthentication().getPrincipal() --> isikukood
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            } catch (ExpiredJwtException e) {
+                log.error("QUERY WITH EXPIRED TOKEN {}", token);
+            } catch (UnsupportedJwtException e) {
+                log.error("QUERY WITH UNSUPPORTED JWT TOKEN {}", token);
+            } catch (MalformedJwtException e) {
+                log.error("QUERY WITH MALFORMED TOKEN {}", token);
+            } catch (SignatureException e) {
+                log.error("QUERY WITH FALSE SIGNATURE TOKEN {}", token);
+            } catch (IllegalArgumentException e) {
+                log.error("QUERY WITH ILLEGAL ARGUMENT TOKEN {}", token);
             }
-
-            Authentication authentication = new UsernamePasswordAuthenticationToken(
-                    personCode,null, authorities
-            );
-
-            // turva globaalne hoidja
-            //SecurityContextHolder.getContext().getAuthentication().getPrincipal() --> isikukood
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-
-            // MalformedJwtException
-            // ExpiredJwtException
         }
 
         super.doFilterInternal(request, response, chain);

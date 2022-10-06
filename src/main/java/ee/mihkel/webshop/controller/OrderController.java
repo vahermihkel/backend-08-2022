@@ -1,9 +1,11 @@
 package ee.mihkel.webshop.controller;
 
+import ee.mihkel.webshop.controller.model.CartProduct;
 import ee.mihkel.webshop.controller.model.EveryPayResponse;
 import ee.mihkel.webshop.entity.Order;
 import ee.mihkel.webshop.entity.Person;
 import ee.mihkel.webshop.entity.Product;
+import ee.mihkel.webshop.repository.CartProductRepository;
 import ee.mihkel.webshop.repository.OrderRepository;
 import ee.mihkel.webshop.repository.PersonRepository;
 import ee.mihkel.webshop.repository.ProductRepository;
@@ -33,6 +35,9 @@ public class OrderController {
     @Autowired
     OrderService orderService;
 
+    @Autowired
+    CartProductRepository cartProductRepository;
+
     @GetMapping("orders")
     public ResponseEntity<List<Order>> getPersonOrders() {
         String personCode = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
@@ -40,16 +45,17 @@ public class OrderController {
         return new ResponseEntity<>(orderRepository.findAllByPerson(person), HttpStatus.OK);
     }
 
-    @PostMapping("orders")
-    public ResponseEntity<EveryPayResponse> addNewOrder(@RequestBody List<Product> products) {
+    @PostMapping("orders")                                         // [{productId: Product, quantity: 8}]
+    public ResponseEntity<EveryPayResponse> addNewOrder(@RequestBody List<CartProduct> cartProducts) {
         String personCode = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
 
-        List<Product> originalProducts = orderService.findOriginalProducts(products);
+        // List   {product: Product, quantity: int}
+//        List<Product> originalProducts = orderService.findOriginalProducts(ids);
 
-        double totalSum = orderService.calculateTotalSum(originalProducts);
+        double totalSum = orderService.calculateTotalSum(cartProducts);
 
         Person person = personRepository.findById(personCode).get();
-        Order order = orderService.saveOrder(person,originalProducts,totalSum);
+        Order order = orderService.saveOrder(person,cartProducts,totalSum);
 
         return new ResponseEntity<>(orderService.getLinkFromEveryPay(order), HttpStatus.CREATED) ;
     }
@@ -65,8 +71,8 @@ public class OrderController {
     @GetMapping("orders-by-product/{productID}")
     public List<Long> getOrdersByProduct(@PathVariable Long productID) {
         Product product = productRepository.findById(productID).get();
-        List<Long> ids = orderRepository.findAllByProductsOrderByIdAsc(product).stream()
-                .map(Order::getId)
+        List<Long> ids = cartProductRepository.findAllByProductOrderByIdAsc(product).stream()
+                .map(CartProduct::getId)
                 .collect(Collectors.toList());
         return ids;
     }
