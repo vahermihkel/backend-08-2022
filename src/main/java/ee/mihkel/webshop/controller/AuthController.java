@@ -2,6 +2,7 @@ package ee.mihkel.webshop.controller;
 
 import ee.mihkel.webshop.auth.TokenGenerator;
 import ee.mihkel.webshop.controller.exceptions.WrongPasswordException;
+import ee.mihkel.webshop.controller.model.AuthResponse;
 import ee.mihkel.webshop.controller.model.LoginData;
 import ee.mihkel.webshop.controller.model.TokenResponse;
 import ee.mihkel.webshop.entity.Person;
@@ -9,7 +10,9 @@ import ee.mihkel.webshop.repository.PersonRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -59,6 +62,21 @@ public class AuthController {
             // parem klõps -> refactor -> rename
             throw new WrongPasswordException();
         }
+    }
+
+    @GetMapping("check-if-logged-in")
+    public ResponseEntity<AuthResponse> checkIfLoggedIn() {
+        return new ResponseEntity<>(new AuthResponse(true), HttpStatus.OK);
+    }
+
+    @GetMapping("check-if-admin")
+    public ResponseEntity<AuthResponse> checkIfAdmin() {
+//        String personCode = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
+//        Person person = personRepository.findById(personCode).get();
+//        if (person.getRole().equals("admin")) {
+//            new ResponseEntity<>(true, HttpStatus.OK);
+//        }
+        return new ResponseEntity<>(new AuthResponse(true), HttpStatus.OK);
     }
 
 }

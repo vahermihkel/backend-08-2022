@@ -35,6 +35,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers(HttpMethod.POST, "category").hasAuthority("admin")
                 .antMatchers(HttpMethod.DELETE, "category").hasAuthority("admin")
                 .antMatchers(HttpMethod.POST, "add-product").hasAuthority("admin")
+                .antMatchers("/check-if-admin").hasAuthority("admin")
                 .anyRequest().authenticated()
                 .and().sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
